@@ -23,12 +23,6 @@ jobs:
       with:
         dotnet-version: '8.0'
 
-    - name: Stop App Pool
-      run: |
-        ./manage-apppool.ps1 -action stop
-        echo "Waiting for app pool to stop..."
-        Start-Sleep -Seconds 10
-        
     # Restore dependencies
     - name: Restore dependencies
       run: dotnet restore
@@ -51,12 +45,6 @@ jobs:
         local-dir: ./publish/
         server-dir: ./wwwroot/  # Monster ASP's directory
         dangerous-clean-slate: false  # Safety flag
-
-    - name: Start App Pool
-      run: |
-        ./manage-apppool.ps1 -action start
-        echo "Waiting for app pool to start..."
-        Start-Sleep -Seconds 10
 
     - name: Verify Deployment
       run: |
