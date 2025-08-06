@@ -23,14 +23,6 @@ jobs:
       with:
         dotnet-version: '8.0'
 
-    # 1. Force IIS to release locks
-    - name: Activate Maintenance Mode
-      run: |
-        # Create 1KB+ app_offline.htm (IIS requirement)
-        fsutil file createnew app_offline.tmp 1024
-        curl -T app_offline.tmp ftp://site33211.siteasp.net/wwwroot/app_offline.htm -u "site33211:${{ secrets.FTP_PASSWORD }}"
-        Start-Sleep -Seconds 30  # Wait for IIS to fully release files
-
     # Restore dependencies
     - name: Restore dependencies
       run: dotnet restore
@@ -53,33 +45,10 @@ jobs:
         local-dir: ./publish/
         server-dir: ./wwwroot/  # Monster ASP's directory
         dangerous-clean-slate: false  # Safety flag
-        retry-count: 3
-        retry-wait-time: 15000  # 15s between retries
 
-    # Verify DLLs updated
-    - name: Check DLL Deployment
+    - name: Verify Deployment
       run: |
-        $files = @("External-API-Integration.dll", "YourApp.Main.dll")
-        foreach ($file in $files) {
-          $size = (curl -I ftp://site33211.siteasp.net/wwwroot/bin/$file -u "site33211:${{ secrets.FTP_PASSWORD }}" | Select-String "Content-Length").ToString().Split(":")[1].Trim()
-          if ([int]$size -lt 10KB) { throw "$file update failed!" }
+        $response = Invoke-WebRequest -Uri "https://techxexpress.runasp.net/swagger" -SkipCertificateCheck
+        if ($response.StatusCode -ne 200) {
+          throw "Application failed to start"
         }
-
-    # Restore application
-    - name: Disable Maintenance Mode
-      run: |
-        curl -Q "DELE wwwroot/app_offline.htm" ftp://site33211.siteasp.net -u "site33211:${{ secrets.FTP_PASSWORD }}"
-        Start-Sleep -Seconds 10  # Wait for app pool restart
-
-    - name: Verify Site Online
-      run: |
-        $retry = 0
-        while ($retry -lt 5) {
-          try {
-            $status = (Invoke-WebRequest -Uri "https://techxexpress.runasp.net" -SkipCertificateCheck -Method Head).StatusCode
-            if ($status -eq 200) { exit 0 }
-          } catch { }
-          Start-Sleep -Seconds 10
-          $retry++
-        }
-        throw "Application failed to start"
