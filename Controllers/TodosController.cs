@@ -66,6 +66,29 @@ namespace External_API_Integration.Controllers
             return todoDto;
         }
 
+        [HttpGet("details-{id}")]
+        public async Task<ActionResult<TodoDto>> GetDetailsById(int id)
+        {
+            var todo = await _context.Todos.FindAsync(id);
+
+            if (todo == null)
+            {
+                return NotFound();
+            }
+
+            TodoDto todoDto = new TodoDto
+            {
+                Title = todo.Title,
+                Description = todo.Description,
+                Status = todo.Status,
+                CreatedDate = todo.CreatedDate,
+                DueDate = todo.DueDate,
+                Priority = todo.Priority.ToString()
+            };
+
+            return todoDto;
+        }
+
         [HttpPost]
         [Authorize(Roles = "ADMIN")]
         public async Task<ActionResult<Todo>> Create(CreateTodoDto todoDto)
