@@ -5,7 +5,7 @@ param(
 
 $server = "site33211.siteasp.net"
 $username = "site33211"
-$password = $env:FTP_PASSWORD
+$password = "x?5AG4o#fR_2"
 
 # Upload command file via FTP
 function Send-IISCommand($command) {
