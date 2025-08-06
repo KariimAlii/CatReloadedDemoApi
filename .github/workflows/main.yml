@@ -1,0 +1,47 @@
+name: Deploy to Monster ASP
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_NAME: 'YourApiProjectName'  # Replace with your actual project name
+  PUBLISH_FOLDER: './publish'
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Set up .NET
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'
+        
+    # Restore dependencies
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    # Build the project
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    
+    # Publish to folder
+    - name: Publish
+      run: dotnet publish ./External-API-Integration.csproj -c Release -o ./publish/ --no-build
+
+    - name: FTP Deploy
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: 21
+        local-dir: ./publish/
+        server-dir: ./wwwroot/  # Monster ASP's directory
+        dangerous-clean-slate: false  # Safety flag
